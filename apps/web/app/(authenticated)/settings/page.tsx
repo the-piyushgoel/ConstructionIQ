@@ -1,0 +1,1 @@
+export default function Page() { return <div className="p-4"><h1 className="text-heading-lg mb-4 capitalize">settings</h1><p className="text-body-md text-text-secondary">Placeholder for settings.</p></div>; }

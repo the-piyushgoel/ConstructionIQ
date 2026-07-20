@@ -1,0 +1,1 @@
+export default function Page() { return <div className="p-4"><h1 className="text-heading-lg mb-4 capitalize">risk</h1><p className="text-body-md text-text-secondary">Placeholder for risk.</p></div>; }

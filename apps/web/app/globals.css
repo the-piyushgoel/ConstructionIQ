@@ -1,3 +1,98 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark mode by default */
+    --color-surface-canvas: #0B0D10;
+    --color-surface-base: #111418;
+    --color-surface-raised: #181C21;
+    --color-surface-overlay: #1F242B;
+    --color-surface-sunken: #0E1013;
+    --color-border-subtle: #20252C;
+    --color-border-default: #2A3038;
+    --color-border-strong: #3A424D;
+    --color-text-primary: #EDEFF2;
+    --color-text-secondary: #9AA2AD;
+    --color-text-muted: #666E79;
+    --color-text-disabled: #454B54;
+
+    --color-brand-50: #EEF0FE;
+    --color-brand-400: #7B7FF0;
+    --color-brand-500: #5B5FE8;
+    --color-brand-600: #4548C4;
+    --color-brand-900: #1E1F52;
+
+    --color-risk-critical: #E5484D;
+    --color-risk-critical-bg: rgba(229, 72, 77, 0.12);
+    --color-risk-critical-border: rgba(229, 72, 77, 0.40);
+    --color-risk-critical-text: #FF7B80; /* Lightened for AA contrast */
+
+    --color-risk-high: #F0913D;
+    --color-risk-high-bg: rgba(240, 145, 61, 0.12);
+    --color-risk-high-border: rgba(240, 145, 61, 0.40);
+    --color-risk-high-text: #FFAC5E;
+
+    --color-risk-moderate: #E8B93D;
+    --color-risk-moderate-bg: rgba(232, 185, 61, 0.12);
+    --color-risk-moderate-border: rgba(232, 185, 61, 0.40);
+    --color-risk-moderate-text: #FFD45E;
+
+    --color-risk-low: #4FAE6E;
+    --color-risk-low-bg: rgba(79, 174, 110, 0.12);
+    --color-risk-low-border: rgba(79, 174, 110, 0.40);
+    --color-risk-low-text: #6DD58F;
+
+    --color-risk-neutral: #5B6270;
+    --color-risk-neutral-bg: rgba(91, 98, 112, 0.12);
+    --color-risk-neutral-border: rgba(91, 98, 112, 0.40);
+    --color-risk-neutral-text: #9FA6B3;
+
+    /* Viz palette */
+    --color-viz-1: #5B5FE8;
+    --color-viz-2: #3DB8E8;
+    --color-viz-3: #3DE8C4;
+    --color-viz-4: #E8C43D;
+    --color-viz-5: #E87D3D;
+    --color-viz-6: #C43DE8;
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-lg: 16px;
+    --space-xl: 24px;
+    --space-2xl: 32px;
+    --space-3xl: 48px;
+
+    /* Radius */
+    --radius-none: 0px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-pill: 9999px;
+  }
+
+  [data-theme="light"] {
+    --color-surface-canvas: #F7F8FA;
+    --color-surface-base: #FFFFFF;
+    --color-surface-raised: #FFFFFF;
+    --color-surface-overlay: #F1F2F4;
+    --color-surface-sunken: #EEF0F2;
+    --color-border-subtle: #E4E6E9;
+    --color-border-default: #D6D9DD;
+    --color-border-strong: #B8BCC2;
+    --color-text-primary: #12151A;
+    --color-text-secondary: #5B616B;
+    --color-text-muted: #8B909A;
+    --color-text-disabled: #B4B8BE;
+
+    /* Semantic adjustments for light mode contrast */
+    --color-risk-critical-text: #C92A2F;
+    --color-risk-high-text: #D66D1B;
+    --color-risk-moderate-text: #C79516;
+    --color-risk-low-text: #2A8C4A;
+    --color-risk-neutral-text: #3D4452;
+  }
+}
