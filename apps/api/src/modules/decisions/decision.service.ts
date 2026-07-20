@@ -79,6 +79,10 @@ export class DecisionService {
     
     await this.verifyDecisionOwnership(id, userId, role);
 
+    if (decision.action === 'approved' || decision.action === 'rejected') {
+      throw new AppError(400, 'BAD_REQUEST', 'Decision has already been processed');
+    }
+
     const updateData: Prisma.DecisionUpdateInput = {
       action: 'approved',
       modifiedWeights: {
@@ -89,7 +93,7 @@ export class DecisionService {
       decidedAt: new Date(),
     };
 
-    return this.repository.update(id, updateData);
+    return this.repository.approveTransaction(id, decision.planId, updateData);
   }
 
   async rejectDecision(id: string, userId: string, role: string, data: DecisionRejectInput) {
@@ -100,6 +104,10 @@ export class DecisionService {
     
     await this.verifyDecisionOwnership(id, userId, role);
 
+    if (decision.action === 'approved' || decision.action === 'rejected') {
+      throw new AppError(400, 'BAD_REQUEST', 'Decision has already been processed');
+    }
+
     const updateData: Prisma.DecisionUpdateInput = {
       action: 'rejected',
       modifiedWeights: {
@@ -109,6 +117,6 @@ export class DecisionService {
       decidedAt: new Date(),
     };
 
-    return this.repository.update(id, updateData);
+    return this.repository.rejectTransaction(id, decision.planId, updateData);
   }
 }

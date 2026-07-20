@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -62,7 +62,7 @@ apiClient.interceptors.response.use(
           refreshToken,
         });
 
-        const { token, refreshToken: newRefreshToken } = res.data;
+        const { tokens: { accessToken: token, refreshToken: newRefreshToken } } = res.data.data;
         useAuthStore.getState().updateToken(token, newRefreshToken);
 
         apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -84,7 +84,7 @@ apiClient.interceptors.response.use(
 
     // Global Error Handling
     if (error.response && error.response.status !== 401) {
-      const message = error.response.data?.error || error.response.data?.message || "An unexpected error occurred.";
+      const message = error.response.data?.error?.message || error.response.data?.message || "An unexpected error occurred.";
       useNotificationStore.getState().addNotification({
         title: `Error ${error.response.status}`,
         message,

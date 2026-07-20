@@ -29,7 +29,7 @@ export const riskEventQuerySchema = z.object({
     projectId: z.string().uuid().optional(),
     page: z.coerce.number().min(1).optional(),
     limit: z.coerce.number().min(1).max(100).optional(),
-    sortBy: z.string().optional(),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'identifiedAt']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
   }),
 });

@@ -1,5 +1,6 @@
 import { Decision, Prisma } from '@prisma/client';
 import prisma from '../../db/prisma';
+import { AppError } from '../../types';
 
 export class DecisionRepository {
   async create(data: Prisma.DecisionUncheckedCreateInput): Promise<Decision> {
@@ -24,5 +25,29 @@ export class DecisionRepository {
 
   async delete(id: string): Promise<void> {
     await prisma.decision.delete({ where: { id } });
+  }
+
+  async approveTransaction(id: string, planId: string, data: Prisma.DecisionUpdateInput): Promise<Decision> {
+    return prisma.$transaction(async (tx) => {
+      const result = await tx.decision.updateMany({ where: { id, action: 'pending' }, data });
+      if (result.count === 0) {
+        throw new AppError(409, 'CONFLICT', 'Decision has already been processed');
+      }
+      const decision = await tx.decision.findUnique({ where: { id } });
+      await tx.recoveryPlan.update({ where: { id: planId }, data: { status: 'approved' } });
+      return decision!;
+    });
+  }
+
+  async rejectTransaction(id: string, planId: string, data: Prisma.DecisionUpdateInput): Promise<Decision> {
+    return prisma.$transaction(async (tx) => {
+      const result = await tx.decision.updateMany({ where: { id, action: 'pending' }, data });
+      if (result.count === 0) {
+        throw new AppError(409, 'CONFLICT', 'Decision has already been processed');
+      }
+      const decision = await tx.decision.findUnique({ where: { id } });
+      await tx.recoveryPlan.update({ where: { id: planId }, data: { status: 'rejected' } });
+      return decision!;
+    });
   }
 }

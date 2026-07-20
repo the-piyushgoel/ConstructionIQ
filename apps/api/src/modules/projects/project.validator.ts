@@ -24,10 +24,10 @@ export const updateProjectSchema = z.object({
 
 export const projectQuerySchema = z.object({
   query: z.object({
-    page: z.string().regex(/^\d+$/).optional(),
-    limit: z.string().regex(/^\d+$/).optional(),
+    page: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(100).optional(),
     status: z.enum(['PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED']).optional(),
-    sortBy: z.string().optional(),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'name']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
   }),
 });

@@ -1,7 +1,6 @@
 import { RiskEventRepository } from './risk-event.repository';
 import { CreateRiskEventInput, UpdateRiskEventInput, RiskEventQuery } from './risk-event.types';
 import { AppError } from '../../types';
-import prisma from '../../db/prisma';
 import { Prisma } from '@prisma/client';
 
 export class RiskEventService {
@@ -10,16 +9,13 @@ export class RiskEventService {
   private async verifyProjectOwnership(projectId: string, userId: string, role: string) {
     if (role === 'ADMIN') return;
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true },
-    });
+    const ownerId = await this.repository.findProjectOwner(projectId);
 
-    if (!project) {
+    if (!ownerId) {
       throw new AppError(404, 'NOT_FOUND', 'Project not found');
     }
 
-    if (project.ownerId !== userId) {
+    if (ownerId !== userId) {
       throw new AppError(403, 'FORBIDDEN', 'Forbidden: You do not have access to this project');
     }
   }
@@ -54,11 +50,7 @@ export class RiskEventService {
       await this.verifyProjectOwnership(query.projectId, userId, role);
     } else if (role !== 'ADMIN') {
       // If no project specified, restrict to user's projects
-      const userProjects = await prisma.project.findMany({
-        where: { ownerId: userId },
-        select: { id: true },
-      });
-      const projectIds = userProjects.map(p => p.id);
+      const projectIds = await this.repository.findProjectIdsByOwner(userId);
       
       if (projectIds.length === 0) {
         return { data: [], meta: { total: 0, page: 1, limit: query.limit || 10, totalPages: 0 } };
@@ -76,11 +68,8 @@ export class RiskEventService {
     if (query.projectId) {
       where.projectId = query.projectId;
     } else if (role !== 'ADMIN') {
-      const userProjects = await prisma.project.findMany({
-        where: { ownerId: userId },
-        select: { id: true },
-      });
-      where.projectId = { in: userProjects.map(p => p.id) };
+      const projectIds = await this.repository.findProjectIdsByOwner(userId);
+      where.projectId = { in: projectIds };
     }
 
     const orderBy: Prisma.RiskEventOrderByWithRelationInput = {};

@@ -21,9 +21,9 @@ export class AuthRepository {
   }
 
   async deleteSession(token: string): Promise<void> {
-    await prisma.session.delete({
+    await prisma.session.deleteMany({
       where: { token },
-    }).catch(() => { /* ignore if not found */ });
+    });
   }
 
   async findSessionByToken(token: string): Promise<Session | null> {

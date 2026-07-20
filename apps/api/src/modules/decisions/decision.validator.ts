@@ -6,7 +6,7 @@ export const decisionQuerySchema = z.object({
     pmUserId: z.string().uuid().optional(),
     page: z.coerce.number().min(1).optional(),
     limit: z.coerce.number().min(1).max(100).optional(),
-    sortBy: z.string().optional(),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'decidedAt']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
   }),
 });

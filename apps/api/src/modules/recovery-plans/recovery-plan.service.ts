@@ -1,7 +1,6 @@
 import { RecoveryPlanRepository } from './recovery-plan.repository';
 import { RecoveryPlanQuery, GenerateRecoveryPlanInput } from './recovery-plan.types';
 import { AppError } from '../../types';
-import prisma from '../../db/prisma';
 import { Prisma } from '@prisma/client';
 
 export class RecoveryPlanService {
@@ -10,27 +9,21 @@ export class RecoveryPlanService {
   private async verifyProjectOwnership(projectId: string, userId: string, role: string) {
     if (role === 'ADMIN') return;
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true },
-    });
+    const ownerId = await this.repository.findProjectOwner(projectId);
 
-    if (!project) {
+    if (!ownerId) {
       throw new AppError(404, 'NOT_FOUND', 'Project not found');
     }
 
-    if (project.ownerId !== userId) {
+    if (ownerId !== userId) {
       throw new AppError(403, 'FORBIDDEN', 'Forbidden: You do not have access to this project');
     }
   }
 
   private async getProjectIdForRiskEvent(riskEventId: string): Promise<string> {
-    const riskEvent = await prisma.riskEvent.findUnique({
-      where: { id: riskEventId },
-      select: { projectId: true }
-    });
-    if (!riskEvent) throw new AppError(404, 'NOT_FOUND', 'RiskEvent not found');
-    return riskEvent.projectId;
+    const projectId = await this.repository.findRiskEventProjectId(riskEventId);
+    if (!projectId) throw new AppError(404, 'NOT_FOUND', 'RiskEvent not found');
+    return projectId;
   }
 
   // ==========================================
@@ -56,11 +49,8 @@ export class RecoveryPlanService {
       await this.verifyProjectOwnership(query.projectId, userId, role);
       where.riskEvent = { projectId: query.projectId };
     } else if (role !== 'ADMIN') {
-      const userProjects = await prisma.project.findMany({
-        where: { ownerId: userId },
-        select: { id: true },
-      });
-      where.riskEvent = { projectId: { in: userProjects.map(p => p.id) } };
+      const projectIds = await this.repository.findProjectIdsByOwner(userId);
+      where.riskEvent = { projectId: { in: projectIds } };
     }
 
     if (query.riskEventId) {
@@ -95,7 +85,10 @@ export class RecoveryPlanService {
   // Internal AI & System Facing Methods
   // ==========================================
 
-  async generateRecoveryPlan(data: GenerateRecoveryPlanInput) {
+  async generateRecoveryPlan(userId: string, role: string, data: GenerateRecoveryPlanInput) {
+    const projectId = await this.getProjectIdForRiskEvent(data.riskEventId);
+    await this.verifyProjectOwnership(projectId, userId, role);
+
     const createData: Prisma.RecoveryPlanUncheckedCreateInput = {
       riskEventId: data.riskEventId,
       rankedOptions: data.rankedOptions as Prisma.InputJsonValue | undefined,
@@ -107,11 +100,21 @@ export class RecoveryPlanService {
     return this.repository.create(createData);
   }
 
-  async archiveRecoveryPlan(id: string) {
+  async archiveRecoveryPlan(id: string, userId: string, role: string) {
+    const plan = await this.repository.findById(id);
+    if (!plan) throw new AppError(404, 'NOT_FOUND', 'Recovery Plan not found');
+    const projectId = await this.getProjectIdForRiskEvent(plan.riskEventId);
+    await this.verifyProjectOwnership(projectId, userId, role);
+
     return this.repository.update(id, { status: 'archived' });
   }
 
-  async approveRecoveryPlan(id: string) {
+  async approveRecoveryPlan(id: string, userId: string, role: string) {
+    const plan = await this.repository.findById(id);
+    if (!plan) throw new AppError(404, 'NOT_FOUND', 'Recovery Plan not found');
+    const projectId = await this.getProjectIdForRiskEvent(plan.riskEventId);
+    await this.verifyProjectOwnership(projectId, userId, role);
+
     return this.repository.update(id, { status: 'approved' });
   }
 }

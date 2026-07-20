@@ -25,4 +25,14 @@ export class RiskEventRepository {
   async delete(id: string): Promise<void> {
     await prisma.riskEvent.delete({ where: { id } });
   }
+
+  async findProjectOwner(projectId: string): Promise<string | null> {
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { ownerId: true } });
+    return project?.ownerId || null;
+  }
+
+  async findProjectIdsByOwner(userId: string): Promise<string[]> {
+    const projects = await prisma.project.findMany({ where: { ownerId: userId }, select: { id: true } });
+    return projects.map(p => p.id);
+  }
 }

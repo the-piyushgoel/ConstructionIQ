@@ -3,7 +3,16 @@ import { DecisionRepository } from '../decision.repository';
 import { AppError } from '../../../types';
 import prisma from '../../../db/prisma';
 
+const mockTx = {
+  decision: { 
+    updateMany: jest.fn(),
+    findUnique: jest.fn(),
+  },
+  recoveryPlan: { update: jest.fn() },
+};
+
 jest.mock('../../../db/prisma', () => ({
+  $transaction: jest.fn((cb) => cb(mockTx)),
   decision: {
     findUnique: jest.fn(),
     findMany: jest.fn(),
@@ -33,12 +42,14 @@ describe('DecisionService', () => {
     it('should update decision to approved if ownership matches', async () => {
       const mockDecision = { id: 'dec-1', pmUserId: 'user-1' };
       (prisma.decision.findUnique as jest.Mock).mockResolvedValue(mockDecision);
-      (prisma.decision.update as jest.Mock).mockResolvedValue({ ...mockDecision, action: 'approved' });
+      mockTx.decision.updateMany.mockResolvedValue({ count: 1 });
+      mockTx.decision.findUnique.mockResolvedValue({ ...mockDecision, action: 'approved' });
 
       const result = await service.approveDecision('dec-1', 'user-1', 'PM', { comments: 'Looks good' });
       
       expect(result.action).toBe('approved');
-      expect(prisma.decision.update).toHaveBeenCalledWith(
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(mockTx.decision.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ action: 'approved' }) })
       );
     });

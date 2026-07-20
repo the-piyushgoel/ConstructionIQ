@@ -46,17 +46,25 @@ describe('RecoveryPlanService', () => {
   });
 
   describe('Internal AI Methods', () => {
-    it('should generate plan without ownership checks', async () => {
+    it('should generate plan with ownership checks', async () => {
       const mockPlan = { id: 'plan-1', status: 'generated' };
-      (prisma.recoveryPlan.create as jest.Mock).mockResolvedValue(mockPlan);
+      const mockRiskEvent = { id: 'risk-1', projectId: 'project-1' };
+      const mockProject = { id: 'project-1', ownerId: 'user-1' };
 
-      const result = await service.generateRecoveryPlan({
-        riskEventId: 'event-1',
-        recommendationConfidence: 90,
+      (prisma.recoveryPlan.create as jest.Mock).mockResolvedValue(mockPlan);
+      (prisma.riskEvent.findUnique as jest.Mock).mockResolvedValue(mockRiskEvent);
+      (prisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
+
+      const result = await service.generateRecoveryPlan('user-1', 'PM', {
+        riskEventId: 'risk-1',
+        rankedOptions: { options: [{ description: 'Option 1' }] },
+        finalScoreBreakdown: { cost: 80 },
+        recommendationConfidence: 0.9,
+        reasoningConfidence: '0.85',
       });
 
       expect(result).toEqual(mockPlan);
-      expect(prisma.project.findUnique).not.toHaveBeenCalled();
+      expect(prisma.project.findUnique).toHaveBeenCalled();
     });
   });
 });

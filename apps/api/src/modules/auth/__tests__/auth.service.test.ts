@@ -12,6 +12,7 @@ describe('AuthService', () => {
   let repoMock: jest.Mocked<AuthRepository>;
 
   beforeEach(() => {
+    process.env.JWT_SECRET = 'test-secret';
     repoMock = new AuthRepository() as jest.Mocked<AuthRepository>;
     service = new AuthService(repoMock);
   });

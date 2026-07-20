@@ -25,4 +25,19 @@ export class PredictionRepository {
   async delete(id: string): Promise<void> {
     await prisma.prediction.delete({ where: { id } });
   }
+
+  async findProjectOwner(projectId: string): Promise<string | null> {
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { ownerId: true } });
+    return project?.ownerId || null;
+  }
+
+  async findProjectIdsByOwner(userId: string): Promise<string[]> {
+    const projects = await prisma.project.findMany({ where: { ownerId: userId }, select: { id: true } });
+    return projects.map(p => p.id);
+  }
+
+  async findRiskEventProjectId(riskEventId: string): Promise<string | null> {
+    const riskEvent = await prisma.riskEvent.findUnique({ where: { id: riskEventId }, select: { projectId: true } });
+    return riskEvent?.projectId || null;
+  }
 }

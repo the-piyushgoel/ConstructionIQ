@@ -1,7 +1,6 @@
 import { PredictionRepository } from './prediction.repository';
 import { PredictionQuery, CreateSystemPredictionInput, UpdateSystemPredictionInput } from './prediction.types';
 import { AppError } from '../../types';
-import prisma from '../../db/prisma';
 import { Prisma } from '@prisma/client';
 
 export class PredictionService {
@@ -13,27 +12,21 @@ export class PredictionService {
   private async verifyProjectOwnership(projectId: string, userId: string, role: string) {
     if (role === 'ADMIN') return;
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true },
-    });
+    const ownerId = await this.repository.findProjectOwner(projectId);
 
-    if (!project) {
+    if (!ownerId) {
       throw new AppError(404, 'NOT_FOUND', 'Project not found');
     }
 
-    if (project.ownerId !== userId) {
+    if (ownerId !== userId) {
       throw new AppError(403, 'FORBIDDEN', 'Forbidden: You do not have access to this project');
     }
   }
 
   private async getProjectIdForRiskEvent(riskEventId: string): Promise<string> {
-    const riskEvent = await prisma.riskEvent.findUnique({
-      where: { id: riskEventId },
-      select: { projectId: true }
-    });
-    if (!riskEvent) throw new AppError(404, 'NOT_FOUND', 'RiskEvent not found');
-    return riskEvent.projectId;
+    const projectId = await this.repository.findRiskEventProjectId(riskEventId);
+    if (!projectId) throw new AppError(404, 'NOT_FOUND', 'RiskEvent not found');
+    return projectId;
   }
 
   // ==========================================
@@ -60,11 +53,8 @@ export class PredictionService {
       // Filter predictions belonging to risk events of this project
       where.riskEvent = { projectId: query.projectId };
     } else if (role !== 'ADMIN') {
-      const userProjects = await prisma.project.findMany({
-        where: { ownerId: userId },
-        select: { id: true },
-      });
-      where.riskEvent = { projectId: { in: userProjects.map(p => p.id) } };
+      const projectIds = await this.repository.findProjectIdsByOwner(userId);
+      where.riskEvent = { projectId: { in: projectIds } };
     }
 
     if (query.riskEventId) {

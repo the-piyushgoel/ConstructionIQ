@@ -25,10 +25,20 @@ export class AuthService {
       role: user.role,
     };
 
-    const secret = process.env.JWT_SECRET || 'fallback_secret_for_dev';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new AppError(500, 'INTERNAL_SERVER_ERROR', 'JWT_SECRET is not configured');
     const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
 
     // Refresh token structure
+    // TODO: Implement Refresh Token Rotation
+    // Currently, we issue long-lived refresh tokens that are overwritten on login/logout.
+    // To implement rotation, we must:
+    // 1. Issue a new refresh token on every /auth/refresh call.
+    // 2. Invalidate the old refresh token immediately.
+    // 3. Store token families/chains in the database to detect reuse of old tokens (which implies compromise)
+    //    and revoke all tokens in the compromised family.
+    // Since this requires database schema updates (token families) and complex state management, 
+    // it is deferred to a later phase.
     const refreshToken = randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days

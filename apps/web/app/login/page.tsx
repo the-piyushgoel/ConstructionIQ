@@ -50,13 +50,13 @@ export default function LoginPage() {
       setError(null);
       const response = await apiClient.post("/auth/login", data);
       
-      const { token, refreshToken, user } = response.data;
+      const { tokens: { accessToken: token, refreshToken }, user } = response.data.data;
       setAuth(token, refreshToken, user);
       
       router.push("/dashboard");
     } catch (err: unknown) {
-      const apiError = err as { response?: { data?: { error?: string } } };
-      setError(apiError.response?.data?.error || "Failed to login. Please try again.");
+      const apiError = err as { response?: { data?: { error?: { message?: string }, message?: string } } };
+      setError(apiError.response?.data?.error?.message || apiError.response?.data?.message || "Failed to login. Please try again.");
     }
   };
 
