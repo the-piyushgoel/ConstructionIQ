@@ -3,6 +3,10 @@ import { setupSecurity } from './middleware/security';
 import { errorHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth';
 import { projectRouter } from './modules/projects';
+import { riskEventRouter } from './modules/risk-events';
+import { predictionRouter } from './modules/predictions';
+import { recoveryPlanRouter } from './modules/recovery-plans';
+import { decisionRouter } from './modules/decisions';
 
 const app = express();
 
@@ -16,6 +20,10 @@ app.get('/health', (_req, res) => {
 // Routers
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/projects', projectRouter);
+app.use('/api/v1/risk-events', riskEventRouter);
+app.use('/api/v1/predictions', predictionRouter);
+app.use('/api/v1/recovery-plans', recoveryPlanRouter);
+app.use('/api/v1/decisions', decisionRouter);
 
 app.use(errorHandler);
 

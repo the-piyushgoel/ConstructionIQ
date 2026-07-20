@@ -1,0 +1,12 @@
+import { z } from 'zod';
+
+export const predictionQuerySchema = z.object({
+  query: z.object({
+    riskEventId: z.string().uuid().optional(),
+    projectId: z.string().uuid().optional(),
+    page: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(100).optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+  }),
+});
