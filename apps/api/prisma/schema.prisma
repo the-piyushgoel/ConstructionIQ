@@ -23,16 +23,17 @@ enum ProjectStatus {
 }
 
 model User {
-  id           String    @id @default(uuid()) @db.Uuid
-  email        String    @unique
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
   passwordHash String
   name         String
-  role         Role      @default(VIEWER)
+  role         Role       @default(VIEWER)
   avatarUrl    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   sessions     Session[]
   projects     Project[]
+  decisions    Decision[]
 }
 
 model Session {
@@ -57,6 +58,7 @@ model Project {
   owner       User          @relation(fields: [ownerId], references: [id])
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  riskEvents  RiskEvent[]
 }
 
 model AuditLog {
@@ -67,4 +69,78 @@ model AuditLog {
   userId     String?  @db.Uuid
   details    Json?
   createdAt  DateTime @default(now())
+}
+
+model RiskEvent {
+  id                   String                @id @default(uuid()) @db.Uuid
+  projectId            String                @db.Uuid
+  project              Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceSignalIds      String[]
+  predictedScore       Int?
+  horizonDays          Int?
+  attributionBreakdown Json?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  predictions          Prediction[]
+  recommendations      AgentRecommendation[]
+  recoveryPlans        RecoveryPlan[]
+}
+
+model Prediction {
+  id          String    @id @default(uuid()) @db.Uuid
+  riskEventId String    @db.Uuid
+  riskEvent   RiskEvent @relation(fields: [riskEventId], references: [id], onDelete: Cascade)
+  score       Int
+  horizonDays Int
+  modelConfig Json?
+  createdAt   DateTime  @default(now())
+}
+
+model AgentRecommendation {
+  id             String       @id @default(uuid()) @db.Uuid
+  riskEventId    String       @db.Uuid
+  riskEvent      RiskEvent    @relation(fields: [riskEventId], references: [id], onDelete: Cascade)
+  agentName      String
+  optionRank     Int
+  scheduleImpact Int?
+  costImpact     Decimal?     @db.Decimal(10, 2)
+  qualityRisk    String?
+  contractRisk   String?
+  createdAt      DateTime     @default(now())
+  simulations    Simulation[]
+}
+
+model Simulation {
+  id                  String              @id @default(uuid()) @db.Uuid
+  recommendationId    String              @db.Uuid
+  recommendation      AgentRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  confidenceScore     Int
+  secondOrderFindings Json?
+  createdAt           DateTime            @default(now())
+}
+
+model RecoveryPlan {
+  id                       String     @id @default(uuid()) @db.Uuid
+  riskEventId              String     @db.Uuid
+  riskEvent                RiskEvent  @relation(fields: [riskEventId], references: [id], onDelete: Cascade)
+  rankedOptions            Json?
+  finalScoreBreakdown      Json?
+  recommendationConfidence Int?
+  reasoningConfidence      String?
+  dataCompleteness         Int?
+  status                   String     @default("generated")
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+  decisions                Decision[]
+}
+
+model Decision {
+  id              String       @id @default(uuid()) @db.Uuid
+  planId          String       @db.Uuid
+  plan            RecoveryPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  pmUserId        String       @db.Uuid
+  pmUser          User         @relation(fields: [pmUserId], references: [id])
+  action          String
+  modifiedWeights Json?
+  decidedAt       DateTime     @default(now())
 }
