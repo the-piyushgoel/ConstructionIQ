@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { PageLayout } from "@/components/shell/PageLayout";
+import { LoadingState } from "@/components/primitives/LoadingState";
 
 export default function AuthenticatedLayout({
   children,
@@ -21,8 +22,20 @@ export default function AuthenticatedLayout({
     }
   }, [isAuthenticated, router]);
 
-  if (!mounted || !isAuthenticated) {
-    return null; // Return null to prevent hydration errors during redirect
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-canvas">
+        <LoadingState message="Initializing..." />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-canvas">
+        <LoadingState message="Redirecting to login..." />
+      </div>
+    );
   }
 
   return <PageLayout>{children}</PageLayout>;

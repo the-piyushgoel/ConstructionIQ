@@ -4,6 +4,7 @@ import * as React from "react";
 import { Bell, Search, Menu } from "lucide-react";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { apiClient } from "@/lib/api/client";
 import { Avatar } from "@/components/primitives/Avatar";
 import {
   DropdownMenu,
@@ -88,9 +89,15 @@ export function TopBar() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-risk-critical-text focus:text-risk-critical-text"
-              onClick={() => {
-                logout();
-                window.location.href = "/login";
+              onClick={async () => {
+                try {
+                  await apiClient.post("/auth/logout");
+                } catch (e) {
+                  // Ignore error on logout
+                } finally {
+                  logout();
+                  window.location.href = "/login";
+                }
               }}
             >
               Log out

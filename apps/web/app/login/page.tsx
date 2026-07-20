@@ -50,8 +50,8 @@ export default function LoginPage() {
       setError(null);
       const response = await apiClient.post("/auth/login", data);
       
-      const { token, user } = response.data;
-      setAuth(token, user);
+      const { token, refreshToken, user } = response.data;
+      setAuth(token, refreshToken, user);
       
       router.push("/dashboard");
     } catch (err: unknown) {
