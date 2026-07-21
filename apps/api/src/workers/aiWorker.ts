@@ -2,6 +2,11 @@ import { Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { AIJobPayload } from '../queues/aiJobTypes';
 import { AIService } from '../services/ai/aiService';
+import { RiskPrompt } from '../services/ai/prompts/riskPrompt';
+import { DecisionPrompt } from '../services/ai/prompts/decisionPrompt';
+import { SchedulePrompt } from '../services/ai/prompts/schedulePrompt';
+import { BasePrompt } from '../services/ai/prompts/basePrompt';
+import { z } from 'zod';
 
 export let aiWorker: Worker<AIJobPayload> | null = null;
 
@@ -28,12 +33,65 @@ export const initAIWorker = () => {
     aiWorker = new Worker<AIJobPayload>('ai-jobs', async (job: Job<AIJobPayload>) => {
       console.log(`[AI Worker] Processing job ${job.id} of type ${job.data.type}`);
       
-      // Dispatcher logic -> AIService
-      // Phase 2B placeholder execution logic:
+      let promptBuilder: BasePrompt<unknown, unknown>;
+      let schema: z.ZodSchema<unknown>;
+      
+      switch (job.data.type) {
+        case 'RiskPrediction':
+        case 'RiskAttribution':
+          promptBuilder = new RiskPrompt();
+          schema = z.object({
+            predictedRisks: z.array(z.object({
+              type: z.string(),
+              probability: z.number(),
+              severity: z.number(),
+              description: z.string()
+            }))
+          });
+          break;
+        case 'RecoveryGeneration':
+          promptBuilder = new DecisionPrompt();
+          schema = z.object({
+            evaluation: z.object({
+              recommendedOptionId: z.string(),
+              rationale: z.string(),
+              confidence: z.number()
+            })
+          });
+          break;
+        case 'Simulation':
+          promptBuilder = new SchedulePrompt();
+          schema = z.object({
+            adjustedTimeline: z.array(z.object({
+              taskId: z.string(),
+              newStartDate: z.string(),
+              newEndDate: z.string(),
+              reason: z.string()
+            }))
+          });
+          break;
+        case 'DecisionSupport':
+          promptBuilder = new DecisionPrompt();
+          schema = z.object({
+            evaluation: z.object({
+              recommendedOptionId: z.string(),
+              rationale: z.string(),
+              confidence: z.number()
+            })
+          });
+          break;
+        default:
+          throw new Error(`Unsupported job type: ${job.data.type}`);
+      }
+
+      const requestContext = job.data.data;
+      const request = {
+        messages: promptBuilder.buildMessages(requestContext)
+      };
+
       await aiService.executeRequest(
-        {
-          messages: [{ role: 'user', content: 'Placeholder job execution' }]
-        },
+        request,
+        schema,
         {
           requestId: job.data.requestId,
           jobId: job.id,

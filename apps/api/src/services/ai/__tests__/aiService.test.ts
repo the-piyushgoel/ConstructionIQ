@@ -2,10 +2,12 @@ import { AIService } from '../aiService';
 import { ProviderFactory } from '../providerFactory';
 import { OpenAIProvider } from '../providers/openaiProvider';
 import { AIRateLimitError, AIValidationError } from '../../../errors/ai.errors';
+import { z } from 'zod';
 
 jest.mock('../providerFactory');
 
 describe('AIService', () => {
+  const dummySchema = z.object({ content: z.string() });
   let aiService: AIService;
   let mockProvider: jest.Mocked<OpenAIProvider>;
 
@@ -25,9 +27,9 @@ describe('AIService', () => {
   });
 
   it('should successfully execute a request', async () => {
-    mockProvider.generate.mockResolvedValue({ content: 'success', usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 } });
+    mockProvider.generate.mockResolvedValue({ content: '{"content":"success"}', usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 } });
     
-    const result = await aiService.executeRequest({ messages: [] }, { requestId: '123' });
+    const result = await aiService.executeRequest({ messages: [] }, dummySchema, { requestId: '123' });
     expect(result.content).toBe('success');
     expect(mockProvider.generate).toHaveBeenCalledTimes(1);
   });
@@ -35,12 +37,12 @@ describe('AIService', () => {
   it('should retry on AIRateLimitError and eventually succeed', async () => {
     mockProvider.generate
       .mockRejectedValueOnce(new AIRateLimitError())
-      .mockResolvedValueOnce({ content: 'success', usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 } });
+      .mockResolvedValueOnce({ content: '{"content":"success"}', usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 } });
     
     // @ts-expect-error override private method for testing
     aiService.sleep = jest.fn().mockResolvedValue(true);
 
-    const result = await aiService.executeRequest({ messages: [] }, { requestId: '123' });
+    const result = await aiService.executeRequest({ messages: [] }, dummySchema, { requestId: '123' });
     expect(result.content).toBe('success');
     expect(mockProvider.generate).toHaveBeenCalledTimes(2);
   });
@@ -48,7 +50,7 @@ describe('AIService', () => {
   it('should NOT retry on AIValidationError', async () => {
     mockProvider.generate.mockRejectedValueOnce(new AIValidationError('Invalid schema'));
     
-    await expect(aiService.executeRequest({ messages: [] }, { requestId: '123' })).rejects.toThrow(AIValidationError);
+    await expect(aiService.executeRequest({ messages: [] }, dummySchema, { requestId: '123' })).rejects.toThrow(AIValidationError);
     expect(mockProvider.generate).toHaveBeenCalledTimes(1);
   });
 });

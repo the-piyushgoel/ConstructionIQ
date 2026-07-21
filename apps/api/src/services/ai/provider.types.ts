@@ -1,8 +1,9 @@
 export interface AIRequest {
   system?: string;
-  messages: { role: 'user' | 'assistant'; content: string }[];
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
   temperature?: number;
   maxTokens?: number;
+  signal?: AbortSignal;
 }
 
 export interface AIResponse {
