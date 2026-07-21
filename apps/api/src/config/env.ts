@@ -5,7 +5,7 @@ const envSchema = z.object({
   PORT: z.string().default('3000'),
   CORS_ORIGIN: z.string().default('*'),
   DATABASE_URL: z.string().optional(),
-  JWT_SECRET: z.string().default('default-secret-do-not-use-in-prod'),
+  JWT_SECRET: z.string().min(1, 'JWT_SECRET must be set'),
   REDIS_URL: z.string().optional(),
   
   // AI Config

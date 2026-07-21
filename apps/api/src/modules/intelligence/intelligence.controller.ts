@@ -1,17 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { IntelligenceService } from './intelligence.service';
 import { RequestContext } from '../../utils/requestContext';
+import { AuthenticatedRequest, AppError } from '../../types';
 
 export class IntelligenceController {
   constructor(private readonly service: IntelligenceService) {}
 
-  runFull = async (req: Request, res: Response, next: NextFunction) => {
+  runFull = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { projectId, riskEventId } = req.body;
-      const reqWithId = req as Request & { id?: string };
-      const requestId = RequestContext.getRequestId() || reqWithId.id || 'unknown';
+      const requestId = RequestContext.getRequestId() || req.id || 'unknown';
 
-      const recoveryPackage = await this.service.runFull(projectId, riskEventId, requestId);
+      if (!req.user) throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
+
+      const recoveryPackage = await this.service.runFull(
+        projectId, riskEventId, requestId, req.user.id, req.user.role
+      );
 
       res.status(200).json({
         success: true,
@@ -26,13 +30,16 @@ export class IntelligenceController {
     }
   };
 
-  runPrediction = async (req: Request, res: Response, next: NextFunction) => {
+  runPrediction = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { projectId, riskEventId } = req.body;
-      const reqWithId = req as Request & { id?: string };
-      const requestId = RequestContext.getRequestId() || reqWithId.id || 'unknown';
+      const requestId = RequestContext.getRequestId() || req.id || 'unknown';
 
-      const result = await this.service.runPredictionOnly(projectId, riskEventId, requestId);
+      if (!req.user) throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
+
+      const result = await this.service.runPredictionOnly(
+        projectId, riskEventId, requestId, req.user.id, req.user.role
+      );
 
       res.status(200).json({
         success: true,
@@ -47,18 +54,21 @@ export class IntelligenceController {
     }
   };
 
-  runDecision = async (req: Request, res: Response, next: NextFunction) => {
+  runDecision = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { projectId, prediction, attribution, intelligenceContext } = req.body;
-      const reqWithId = req as Request & { id?: string };
-      const requestId = RequestContext.getRequestId() || reqWithId.id || 'unknown';
+      const requestId = RequestContext.getRequestId() || req.id || 'unknown';
+
+      if (!req.user) throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
 
       const decisionPackage = await this.service.runDecisionOnly(
         projectId,
         requestId,
         prediction,
         attribution,
-        intelligenceContext
+        intelligenceContext,
+        req.user.id,
+        req.user.role
       );
 
       res.status(200).json({

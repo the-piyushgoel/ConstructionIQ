@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { AuthRepository } from './auth.repository';
 import { AppError } from '../../types';
 import { AuthTokens, JwtPayload } from './auth.types';
+import { env } from '../../config/env';
 
 export class AuthService {
   constructor(private readonly repo: AuthRepository) {}
@@ -25,8 +26,7 @@ export class AuthService {
       role: user.role,
     };
 
-    const secret = process.env.JWT_SECRET;
-    if (!secret) throw new AppError(500, 'INTERNAL_SERVER_ERROR', 'JWT_SECRET is not configured');
+    const secret = env.JWT_SECRET;
     const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
 
     // Refresh token structure
@@ -68,9 +68,7 @@ export class AuthService {
       role: user.role,
     };
 
-    const secret = process.env.JWT_SECRET;
-    if (!secret) throw new AppError(500, 'INTERNAL_SERVER_ERROR', 'JWT_SECRET is not configured');
-    
+    const secret = env.JWT_SECRET;
     const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
 
     return {

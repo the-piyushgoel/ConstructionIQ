@@ -31,6 +31,12 @@ const predictionRepo = new PredictionRepository();
 
 import { AIService } from '../../services/ai/aiService';
 import { ConfidenceEngine } from '../intelligence/confidenceEngine';
+import { CostAgent } from '../agents/costAgent';
+import { ScheduleAgent } from '../agents/scheduleAgent';
+import { QualityAgent } from '../agents/qualityAgent';
+import { RiskAgent } from '../agents/riskAgent';
+import { ResourceAgent } from '../agents/resourceAgent';
+import { ProcurementAgent } from '../agents/procurementAgent';
 
 const aiService = new AIService();
 const confidenceEngine = new ConfidenceEngine();
@@ -41,8 +47,12 @@ const attributionEngine = new AttributionEngine(aiService);
 const decisionContextBuilder = new DecisionContextBuilder();
 
 const agentRegistry = new AgentRegistry();
-// Note: In a real app we would register the agents here. 
-// For tests they will be mocked or initialized separately if needed.
+agentRegistry.register(new CostAgent(aiService));
+agentRegistry.register(new ScheduleAgent(aiService));
+agentRegistry.register(new QualityAgent(aiService));
+agentRegistry.register(new RiskAgent(aiService, confidenceEngine));
+agentRegistry.register(new ResourceAgent(aiService));
+agentRegistry.register(new ProcurementAgent(aiService));
 const agentRunner = new AgentRunner(agentRegistry);
 
 const consensusEngine = new ConsensusEngine();

@@ -15,9 +15,14 @@ export class IntelligenceService {
     private readonly predictionRepo: PredictionRepository
   ) {}
 
-  private async fetchContextData(projectId: string) {
+  private async fetchContextData(projectId: string, userId: string, role: string) {
     const project = await this.projectRepo.findById(projectId);
     if (!project) throw new AppError(404, 'NOT_FOUND', 'Project not found');
+
+    // Ownership verification — reuse pattern from ProjectService
+    if (role !== 'ADMIN' && project.ownerId !== userId) {
+      throw new AppError(403, 'FORBIDDEN', 'Access denied');
+    }
 
     const { data: riskEvents } = await this.riskEventRepo.findAll({
       where: { projectId },
@@ -36,8 +41,8 @@ export class IntelligenceService {
     return { project, riskEvents, historicalPredictions, publicSignals };
   }
 
-  async runFull(projectId: string, riskEventId: string, requestId: string) {
-    const { project, riskEvents, historicalPredictions, publicSignals } = await this.fetchContextData(projectId);
+  async runFull(projectId: string, riskEventId: string, requestId: string, userId: string, role: string) {
+    const { project, riskEvents, historicalPredictions, publicSignals } = await this.fetchContextData(projectId, userId, role);
 
     // Validate risk event exists
     const riskEvent = await this.riskEventRepo.findById(riskEventId);
@@ -58,8 +63,8 @@ export class IntelligenceService {
     return this.simulationService.runSimulation(decisionPackage);
   }
 
-  async runPredictionOnly(projectId: string, riskEventId: string, requestId: string) {
-    const { project, riskEvents, historicalPredictions, publicSignals } = await this.fetchContextData(projectId);
+  async runPredictionOnly(projectId: string, riskEventId: string, requestId: string, userId: string, role: string) {
+    const { project, riskEvents, historicalPredictions, publicSignals } = await this.fetchContextData(projectId, userId, role);
 
     const riskEvent = await this.riskEventRepo.findById(riskEventId);
     if (!riskEvent || riskEvent.projectId !== projectId) {
@@ -81,8 +86,16 @@ export class IntelligenceService {
     requestId: string,
     prediction: Record<string, unknown>,
     attribution: Record<string, unknown>,
-    context: IntelligenceContext
+    context: IntelligenceContext,
+    userId: string,
+    role: string
   ) {
+    // Verify ownership even for decision-only (user supplies projectId)
+    const project = await this.projectRepo.findById(projectId);
+    if (!project) throw new AppError(404, 'NOT_FOUND', 'Project not found');
+    if (role !== 'ADMIN' && project.ownerId !== userId) {
+      throw new AppError(403, 'FORBIDDEN', 'Access denied');
+    }
     // The user requirement explicitly states:
     // The decision endpoint must stop after the Decision Orchestrator.
     // Do NOT invoke the Simulation Engine from runDecisionOnly().
