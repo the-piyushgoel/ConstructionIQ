@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthenticatedRequest, AppError } from '../../types';
 import { JwtPayload } from './auth.types';
+import { env } from '../../config/env';
 
 export const authenticateJWT = (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -11,7 +12,7 @@ export const authenticateJWT = (req: AuthenticatedRequest, _res: Response, next:
   }
 
   const token = authHeader.split(' ')[1];
-  const secret = process.env.JWT_SECRET;
+  const secret = env.JWT_SECRET;
   if (!secret) return next(new AppError(500, 'INTERNAL_SERVER_ERROR', 'JWT_SECRET is not configured'));
 
   try {

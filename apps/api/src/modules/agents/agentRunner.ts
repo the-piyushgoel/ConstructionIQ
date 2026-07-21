@@ -1,4 +1,5 @@
 import { AgentRegistry } from './agentRegistry';
+import { Logger } from '../../utils/logger';
 import { ReadonlyDecisionContext, AgentResponse } from './agent.types';
 
 export class AgentRunner {
@@ -23,7 +24,7 @@ export class AgentRunner {
         successfulResponses.push(result.value);
       } else {
         // Log the failure, but do not bubble up the crash to preserve other agents' work
-        console.error(`[AgentRunner] Agent execution failed:`, result.reason);
+        Logger.error(`[AgentRunner] Agent execution failed`, result.reason);
       }
     }
 

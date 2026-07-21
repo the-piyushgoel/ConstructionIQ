@@ -4,13 +4,15 @@ import rateLimit from 'express-rate-limit';
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import morgan from 'morgan';
+import { RequestContext } from '../utils/requestContext';
+import { env } from '../config/env';
 
 export const setupSecurity = (app: Router) => {
   app.use(helmet());
 
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN || '*',
+      origin: env.CORS_ORIGIN,
       methods: ['GET', 'POST', 'PATCH', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     })
@@ -26,9 +28,12 @@ export const setupSecurity = (app: Router) => {
 
   app.use((req, res, next) => {
     const requestId = randomUUID();
-    (req as unknown as Request & { id?: string }).id = requestId;
+    (req as unknown as import('express').Request & { id?: string }).id = requestId;
     res.setHeader('X-Request-ID', requestId);
-    next();
+    
+    RequestContext.run({ requestId }, () => {
+      next();
+    });
   });
 
   // Use a custom token to avoid relying on req[header] that doesn't exist

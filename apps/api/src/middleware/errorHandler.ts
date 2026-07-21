@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../types';
+import { Logger } from '../utils/logger';
+import { RequestContext } from '../utils/requestContext';
 
 export const errorHandler = (
   err: Error,
@@ -8,9 +10,10 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
-  const requestId = (req as Request & { id?: string }).id || 'unknown';
+  const requestId = RequestContext.getRequestId() || (req as Request & { id?: string }).id || 'unknown';
 
   if (err instanceof AppError) {
+    Logger.warn(`[AppError] ${err.errorCode}: ${err.message}`, { errorCode: err.errorCode, details: err.details });
     return res.status(err.statusCode).json({
       success: false,
       error: {
@@ -26,6 +29,7 @@ export const errorHandler = (
   }
 
   if (err instanceof ZodError) {
+    Logger.warn(`[ValidationError] Invalid request data`, { issues: err.issues });
     return res.status(400).json({
       success: false,
       error: {
@@ -41,6 +45,7 @@ export const errorHandler = (
   }
 
   if (err instanceof SyntaxError && 'body' in err) {
+    Logger.warn(`[SyntaxError] Malformed JSON`);
     return res.status(400).json({
       success: false,
       error: {
@@ -54,7 +59,7 @@ export const errorHandler = (
     });
   }
 
-  console.error(`[Error] RequestId: ${requestId}`, err);
+  Logger.error(`[UnhandledError] ${err.message}`, err);
   
   return res.status(500).json({
     success: false,

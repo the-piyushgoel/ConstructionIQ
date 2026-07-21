@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "Construction IQ Intelligence API",
+    "description": "Postman Collection for Construction IQ Phase 3 end-to-end intelligence endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Intelligence",
+      "item": [
+        {
+          "name": "Run Full Pipeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"projectId\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"riskEventId\": \"123e4567-e89b-12d3-a456-426614174001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/intelligence/full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "intelligence",
+                "full"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Run Prediction Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"projectId\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"riskEventId\": \"123e4567-e89b-12d3-a456-426614174001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/intelligence/prediction",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "intelligence",
+                "prediction"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Run Decision Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"projectId\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"prediction\": {\n        \"id\": \"123e4567-e89b-12d3-a456-426614174001\",\n        \"predictedScore\": 85,\n        \"horizonDays\": 14\n    },\n    \"attribution\": {\n        \"rootCauses\": [\"delay\"],\n        \"evidence\": [\"schedule slip\"],\n        \"confidence\": 90\n    },\n    \"intelligenceContext\": {\n        \"projectDetails\": {},\n        \"identifiedRisks\": [],\n        \"historicalPredictions\": [],\n        \"publicSignals\": []\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/intelligence/decision",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "intelligence",
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "YOUR_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}

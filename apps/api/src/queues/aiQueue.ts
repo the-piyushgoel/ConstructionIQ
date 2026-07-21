@@ -1,19 +1,21 @@
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import { AIJobPayload } from './aiJobTypes';
+import { env } from '../config/env';
+import { Logger } from '../utils/logger';
 
 export let aiQueue: Queue<AIJobPayload> | null = null;
 let redisConnection: Redis | null = null;
 
 export const initAIQueue = () => {
-  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+  const redisUrl = env.REDIS_URL || 'redis://localhost:6379';
   
   try {
     redisConnection = new Redis(redisUrl, {
       maxRetriesPerRequest: null,
       retryStrategy: (times) => {
         if (times > 3) {
-          console.warn('[AI Queue] Redis is unavailable. Disabling AI queue gracefully.');
+          Logger.warn('[AI Queue] Redis is unavailable. Disabling AI queue gracefully.');
           return null; // Stop retrying
         }
         return Math.min(times * 50, 2000);
@@ -22,23 +24,23 @@ export const initAIQueue = () => {
 
     redisConnection.on('error', (err) => {
       // Catch error to prevent unhandled rejection crashing the app
-      console.warn(`[AI Queue] Redis connection error: ${err.message}`);
+      Logger.warn(`[AI Queue] Redis connection error: ${err.message}`);
     });
 
     aiQueue = new Queue<AIJobPayload>('ai-jobs', {
       connection: redisConnection
     });
 
-    console.log('[AI Queue] Initialized successfully.');
+    Logger.info('[AI Queue] Initialized successfully.');
   } catch (err) {
-    console.warn(`[AI Queue] Failed to initialize Redis: ${(err as Error).message}. AI features will be disabled.`);
+    Logger.warn(`[AI Queue] Failed to initialize Redis: ${(err as Error).message}. AI features will be disabled.`);
     aiQueue = null;
   }
 };
 
 export const addAIJob = async (jobId: string, payload: AIJobPayload) => {
   if (!aiQueue) {
-    console.warn(`[AI Queue] Cannot add job ${jobId} because queue is disabled.`);
+    Logger.warn(`[AI Queue] Cannot add job ${jobId} because queue is disabled.`);
     return;
   }
   await aiQueue.add(jobId, payload);

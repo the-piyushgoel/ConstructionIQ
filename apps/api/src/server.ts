@@ -1,15 +1,9 @@
+import { env } from './config/env';
+import { Logger } from './utils/logger';
 import app from './app';
 
-const PORT = process.env.PORT || 4000;
-
-const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    console.error(`FATAL ERROR: Environment variable ${envVar} is not defined.`);
-    process.exit(1);
-  }
-}
+const PORT = env.PORT;
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  Logger.info(`Server is running on port ${PORT}`);
 });

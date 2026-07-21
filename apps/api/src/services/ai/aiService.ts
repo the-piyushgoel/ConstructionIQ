@@ -4,6 +4,8 @@ import { aiConfig } from '../../config/ai';
 import { AIRateLimitError, AITimeoutError, ProviderUnavailableError } from '../../errors/ai.errors';
 import { ZodSchema } from 'zod';
 import { ResponseParser } from './parser/responseParser';
+import { Logger } from '../../utils/logger';
+import { Metrics } from '../../utils/metrics';
 
 export interface ExecuteOptions {
   requestId: string;
@@ -48,15 +50,17 @@ export class AIService {
         clearTimeout(timeoutId);
 
         const latency = Date.now() - startTime;
-        console.log(JSON.stringify({
-          msg: 'AI request successful',
+        Logger.info('AI request successful', {
           requestId: options.requestId,
           jobId: options.jobId,
           projectId: options.projectId,
           provider: providerName,
           latency,
           retryCount: attempt,
-        }));
+        });
+        
+        Metrics.recordLatency('aiService_request_latency', latency, { provider: providerName });
+        Metrics.incrementCounter('aiService_request_success', 1, { provider: providerName });
 
         return ResponseParser.parseAndValidate(response.content, schema);
       } catch (error) {
@@ -70,32 +74,31 @@ export class AIService {
           attempt++;
           const delay = Math.pow(2, attempt) * 1000;
           
-          console.warn(JSON.stringify({
-            msg: 'Retrying AI request',
+          Logger.warn('Retrying AI request', {
             requestId: options.requestId,
             jobId: options.jobId,
             projectId: options.projectId,
             provider: providerName,
             retryCount: attempt,
             error: (finalError as Error).message
-          }));
+          });
 
+          Metrics.incrementCounter('aiService_request_retry', 1, { provider: providerName });
           await this.sleep(delay);
           continue;
         }
 
         const latency = Date.now() - startTime;
-        console.error(JSON.stringify({
-          msg: 'AI request failed',
+        Logger.error('AI request failed', finalError, {
           requestId: options.requestId,
           jobId: options.jobId,
           projectId: options.projectId,
           provider: providerName,
           latency,
           retryCount: attempt,
-          error: (finalError as Error).message
-        }));
+        });
 
+        Metrics.incrementCounter('aiService_request_error', 1, { provider: providerName });
         throw finalError;
       }
     }

@@ -1,4 +1,5 @@
 import { AIProvider, AIRequest, AIResponse } from './provider.types';
+import { Logger } from '../../utils/logger';
 
 export abstract class BaseProvider implements AIProvider {
   protected providerName: string;
@@ -15,13 +16,12 @@ export abstract class BaseProvider implements AIProvider {
       const response = await this.doGenerate(request);
       const latency = Date.now() - startTime;
       
-      // Basic observability without sensitive data
-      console.log(`[AI Observability] Provider: ${this.providerName} | Latency: ${latency}ms | Tokens: ${response.usage?.totalTokens ?? 'unknown'}`);
+      Logger.debug(`[AI Observability] Provider: ${this.providerName} | Latency: ${latency}ms | Tokens: ${response.usage?.totalTokens ?? 'unknown'}`);
       
       return response;
     } catch (error) {
       const latency = Date.now() - startTime;
-      console.error(`[AI Observability] Provider: ${this.providerName} | Latency: ${latency}ms | Error: ${(error as Error).message}`);
+      Logger.error(`[AI Observability] Provider: ${this.providerName} | Latency: ${latency}ms | Error: ${(error as Error).message}`, error);
       throw error;
     }
   }
