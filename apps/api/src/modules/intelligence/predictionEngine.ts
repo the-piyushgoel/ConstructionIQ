@@ -2,13 +2,15 @@ import { AIService } from '../../services/ai/aiService';
 import { RiskPrompt } from '../../services/ai/prompts/riskPrompt';
 import { PredictionRepository } from '../predictions/prediction.repository';
 import { IntelligenceContext } from './intelligence.types';
+import { ConfidenceEngine } from './confidenceEngine';
 import { z } from 'zod';
 import { Prediction, Prisma } from '@prisma/client';
 
 export class PredictionEngine {
   constructor(
     private readonly aiService: AIService,
-    private readonly predictionRepository: PredictionRepository
+    private readonly predictionRepository: PredictionRepository,
+    private readonly confidenceEngine: ConfidenceEngine
   ) {}
 
   async executePrediction(
@@ -23,7 +25,6 @@ export class PredictionEngine {
       identifiedRisks: context.identifiedRisks
     });
 
-    // The schema built in Phase 2B for RiskPrediction
     const predictionSchema = z.object({
       predictedRisks: z.array(z.object({
         type: z.string(),
@@ -39,19 +40,22 @@ export class PredictionEngine {
       { requestId }
     );
 
-    // Calculate a naive overall score based on the highest probability * severity from AI
     const highestRisk = response.predictedRisks.reduce((max, curr) => 
       (curr.probability * curr.severity) > (max.probability * max.severity) ? curr : max
     , response.predictedRisks[0] || { probability: 0, severity: 0 });
 
-    const calculatedScore = Math.round(highestRisk.probability * highestRisk.severity) || 50;
+    const aiConfidence = Math.round((highestRisk.probability + highestRisk.severity) / 2) || 50;
+    
+    const calculatedScore = this.confidenceEngine.calculate(
+      aiConfidence, 90, 85, 80 // dummy metrics for now
+    );
 
-    // Store Prediction using the existing repository
     return this.predictionRepository.create({
       riskEventId,
       score: calculatedScore,
-      horizonDays: 30, // Default horizon
-      modelConfig: response as Prisma.InputJsonValue // Store raw AI response as model config
+      horizonDays: 30,
+      modelConfig: response as Prisma.InputJsonValue
     });
   }
 }
+

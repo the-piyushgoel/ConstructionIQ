@@ -4,6 +4,10 @@ import { ReadonlyDecisionContext, AgentResponse } from './agent.types';
 export class AgentRunner {
   constructor(private readonly registry: AgentRegistry) {}
 
+  getAgentCount(): number {
+    return this.registry.getAllAgents().length;
+  }
+
   async runAll(context: ReadonlyDecisionContext, requestId: string): Promise<AgentResponse[]> {
     const agents = this.registry.getAllAgents();
     

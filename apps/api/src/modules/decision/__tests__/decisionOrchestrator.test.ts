@@ -1,9 +1,15 @@
 import { DecisionOrchestrator } from '../decisionOrchestrator';
 import { AgentResponse, ReadonlyDecisionContext } from '../../agents/agent.types';
 
+import { ConsensusEngine } from '../consensusEngine';
+import { ConflictResolver } from '../conflictResolver';
+
 describe('DecisionOrchestrator', () => {
   it('should orchestrate and build a decision package', async () => {
-    const orchestrator = new DecisionOrchestrator();
+    const orchestrator = new DecisionOrchestrator(
+      new ConsensusEngine(),
+      new ConflictResolver()
+    );
     
     const responses: AgentResponse[] = [
       {

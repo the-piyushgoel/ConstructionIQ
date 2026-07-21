@@ -1,46 +1,74 @@
 import { BaseAgent } from './baseAgent';
 import { AgentResponse, ReadonlyDecisionContext } from './agent.types';
-import { RiskPrompt } from '../../services/ai/prompts/riskPrompt';
+import { RiskAgentPrompt } from '../../services/ai/prompts/riskAgentPrompt';
+import { ConfidenceEngine } from '../intelligence/confidenceEngine';
+import { AIService } from '../../services/ai/aiService';
 import { z } from 'zod';
 
 export class RiskAgent extends BaseAgent {
   readonly name = 'RiskAgent';
   readonly version = '1.0.0';
 
+  constructor(
+    aiService: AIService,
+    private readonly confidenceEngine: ConfidenceEngine
+  ) {
+    super(aiService);
+  }
+
   protected buildPromptMessages(context: ReadonlyDecisionContext): Array<{ role: string; content: string }> {
-    const prompt = new RiskPrompt();
+    const prompt = new RiskAgentPrompt();
     return prompt.buildMessages({
       projectDetails: context.project,
-      identifiedRisks: (context.riskEvents as unknown[]) || []
+      identifiedRisks: (context.riskEvents as unknown[]) || [],
+      prediction: context.predictions?.[0] || {}
     }) as Array<{ role: string; content: string }>;
   }
 
   protected getResponseSchema(): z.ZodSchema<unknown> {
+    const riskObject = z.object({
+      type: z.string(),
+      action: z.string(),
+      priority: z.string(),
+      impact: z.string(),
+      assumptions: z.array(z.string())
+    });
+
     return z.object({
-      predictedRisks: z.array(z.object({
-        type: z.string(),
-        probability: z.number(),
-        severity: z.number(),
-        description: z.string()
-      }))
+      validatedRisks: z.array(riskObject),
+      missingRisks: z.array(riskObject),
+      analysisConfidence: z.number()
     });
   }
 
   protected mapResponse(rawResponse: unknown): Omit<AgentResponse, 'metadata' | 'agentName'> {
-    const response = rawResponse as { predictedRisks: { type: string, probability: number, severity: number, description: string }[] };
+    const response = rawResponse as { 
+      validatedRisks: { type: string, action: string, priority: string, impact: string, assumptions: string[] }[],
+      missingRisks: { type: string, action: string, priority: string, impact: string, assumptions: string[] }[],
+      analysisConfidence: number 
+    };
+
+    const combinedRisks = [...response.validatedRisks, ...response.missingRisks];
+    const calculatedScore = this.confidenceEngine.calculate(
+      response.analysisConfidence, 90, 85, 80 // dummy quality metrics
+    );
+
     return {
-      findings: response.predictedRisks,
-      recommendations: response.predictedRisks.map((r: { type: string, severity: number }) => ({
+      findings: {
+        validatedCount: response.validatedRisks.length,
+        missingCount: response.missingRisks.length
+      },
+      recommendations: combinedRisks.map(r => ({
         category: 'Risk',
-        action: 'Mitigate',
+        action: r.action,
         target: r.type,
-        priority: r.severity > 80 ? 'CRITICAL' : 'HIGH',
-        impact: 'High',
-        assumptions: ['Risk models are accurate']
+        priority: r.priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+        impact: r.impact,
+        assumptions: r.assumptions
       })),
       confidence: {
-        score: 90,
-        reasoning: 'Aggregated risk models evaluated.'
+        score: calculatedScore,
+        reasoning: 'Aggregated risk validation against predictions.'
       }
     };
   }

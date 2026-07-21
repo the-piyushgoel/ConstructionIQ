@@ -1,4 +1,5 @@
 import { PredictionEngine } from '../predictionEngine';
+import { ConfidenceEngine } from '../confidenceEngine';
 import { AIService } from '../../../services/ai/aiService';
 import { PredictionRepository } from '../../predictions/prediction.repository';
 import { AIValidationError } from '../../../errors/ai.errors';
@@ -11,11 +12,13 @@ describe('PredictionEngine', () => {
   let aiService: jest.Mocked<AIService>;
   let repository: jest.Mocked<PredictionRepository>;
   let engine: PredictionEngine;
+  let confidenceEngine: ConfidenceEngine;
 
   beforeEach(() => {
     aiService = new AIService() as jest.Mocked<AIService>;
     repository = new PredictionRepository() as jest.Mocked<PredictionRepository>;
-    engine = new PredictionEngine(aiService, repository);
+    confidenceEngine = new ConfidenceEngine();
+    engine = new PredictionEngine(aiService, repository, confidenceEngine);
   });
 
   it('should execute prediction and store it successfully', async () => {
@@ -42,7 +45,7 @@ describe('PredictionEngine', () => {
     expect(aiService.executeRequest).toHaveBeenCalledTimes(1);
     expect(repository.create).toHaveBeenCalledWith({
       riskEventId: 'risk-1',
-      score: 72, // Math.round(0.8 * 90) = 72
+      score: 70, 
       horizonDays: 30,
       modelConfig: expect.any(Object)
     });

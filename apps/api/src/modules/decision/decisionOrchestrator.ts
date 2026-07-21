@@ -5,8 +5,10 @@ import { DecisionPackage } from './decision.types';
 import { AgentResponse, ReadonlyDecisionContext } from '../agents/agent.types';
 
 export class DecisionOrchestrator {
-  private consensusEngine = new ConsensusEngine();
-  private conflictResolver = new ConflictResolver();
+  constructor(
+    private readonly consensusEngine: ConsensusEngine,
+    private readonly conflictResolver: ConflictResolver
+  ) {}
 
   async orchestrate(
     prediction: Record<string, unknown>,

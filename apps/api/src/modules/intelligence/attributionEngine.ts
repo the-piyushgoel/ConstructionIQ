@@ -1,5 +1,5 @@
 import { AIService } from '../../services/ai/aiService';
-import { DecisionPrompt } from '../../services/ai/prompts/decisionPrompt';
+import { AttributionPrompt } from '../../services/ai/prompts/attributionPrompt';
 import { AttributionOutput, IntelligenceContext } from './intelligence.types';
 import { z } from 'zod';
 
@@ -11,13 +11,12 @@ export class AttributionEngine {
     context: IntelligenceContext,
     requestId: string
   ): Promise<AttributionOutput> {
-    const prompt = new DecisionPrompt();
+    const prompt = new AttributionPrompt();
     
-    // We reuse DecisionPrompt as instructed (using existing AI infrastructure)
-    // The attribution is "explaining WHY the prediction occurred."
     const messages = prompt.buildMessages({
-      scenario: `Explain prediction ${predictionId}`,
-      options: [context]
+      predictionId,
+      projectDetails: context.projectDetails,
+      identifiedRisks: context.identifiedRisks
     });
 
     const attributionSchema = z.object({
