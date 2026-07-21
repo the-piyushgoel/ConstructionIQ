@@ -20,8 +20,12 @@ export interface AgentConfidence {
 }
 
 export interface AgentRecommendation {
+  category: string;
   action: string;
+  target: string;
+  priority: string;
   impact: string;
+  assumptions?: string[];
 }
 
 export interface AgentResponse {

@@ -30,8 +30,12 @@ export class ProcurementAgent extends BaseAgent {
     return {
       findings: response.recommendations,
       recommendations: response.recommendations.map(r => ({
-        action: `Source ${r.materialId} from ${r.vendorName}`,
-        impact: `Lead time: ${r.estimatedLeadTimeDays} days`
+        category: 'Procurement',
+        action: 'Source Alternative',
+        target: r.materialId,
+        priority: 'MEDIUM',
+        impact: `Lead time: ${r.estimatedLeadTimeDays} days`,
+        assumptions: ['Current market conditions persist']
       })),
       confidence: {
         score: 75,

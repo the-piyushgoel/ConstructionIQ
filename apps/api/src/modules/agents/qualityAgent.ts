@@ -30,8 +30,12 @@ export class QualityAgent extends BaseAgent {
     return {
       findings: response.qualityReport,
       recommendations: response.qualityReport.recommendations.map(r => ({
-        action: r,
-        impact: 'High'
+        category: 'Quality',
+        action: 'Inspect',
+        target: r,
+        priority: 'HIGH',
+        impact: 'High',
+        assumptions: ['Defects follow historical trends']
       })),
       confidence: {
         score: response.qualityReport.complianceScore,

@@ -30,9 +30,13 @@ export class RiskAgent extends BaseAgent {
     const response = rawResponse as { predictedRisks: { type: string, probability: number, severity: number, description: string }[] };
     return {
       findings: response.predictedRisks,
-      recommendations: response.predictedRisks.map((r: { type: string }) => ({
-        action: `Mitigate ${r.type} risk`,
-        impact: 'High'
+      recommendations: response.predictedRisks.map((r: { type: string, severity: number }) => ({
+        category: 'Risk',
+        action: 'Mitigate',
+        target: r.type,
+        priority: r.severity > 80 ? 'CRITICAL' : 'HIGH',
+        impact: 'High',
+        assumptions: ['Risk models are accurate']
       })),
       confidence: {
         score: 90,

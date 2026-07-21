@@ -30,8 +30,12 @@ export class CostAgent extends BaseAgent {
     return {
       findings: response.forecast,
       recommendations: response.forecast.riskAreas.map((area: string) => ({
-        action: `Review budget for ${area}`,
-        impact: 'Medium'
+        category: 'Finance',
+        action: 'Review budget',
+        target: area,
+        priority: 'HIGH',
+        impact: 'Medium',
+        assumptions: ['Historical variance patterns hold true']
       })),
       confidence: {
         score: 80,

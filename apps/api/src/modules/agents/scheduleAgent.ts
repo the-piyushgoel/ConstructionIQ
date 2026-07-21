@@ -31,8 +31,12 @@ export class ScheduleAgent extends BaseAgent {
     return {
       findings: response.adjustedTimeline,
       recommendations: response.adjustedTimeline.map(a => ({
-        action: `Adjust task ${a.taskId} to start ${a.newStartDate}`,
-        impact: a.reason
+        category: 'Schedule',
+        action: 'Adjust Start Date',
+        target: a.taskId,
+        priority: 'HIGH',
+        impact: a.reason,
+        assumptions: ['No further delays occur']
       })),
       confidence: {
         score: 85,

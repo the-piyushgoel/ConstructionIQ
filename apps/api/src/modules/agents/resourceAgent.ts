@@ -30,8 +30,12 @@ export class ResourceAgent extends BaseAgent {
     return {
       findings: response.allocations,
       recommendations: response.allocations.map(a => ({
-        action: `Assign ${a.resourceId} to ${a.assignedTask}`,
-        impact: `Utilization: ${a.utilitzationPercentage}%`
+        category: 'Resource',
+        action: 'Assign',
+        target: a.resourceId,
+        priority: 'MEDIUM',
+        impact: `Utilization: ${a.utilitzationPercentage}%`,
+        assumptions: ['Resource availability is stable']
       })),
       confidence: {
         score: 82,
