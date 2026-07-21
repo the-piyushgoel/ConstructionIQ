@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
+import { Role } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
 import { AppError } from '../../types';
 import { AuthTokens, JwtPayload } from './auth.types';
@@ -8,6 +9,43 @@ import { env } from '../../config/env';
 
 export class AuthService {
   constructor(private readonly repo: AuthRepository) {}
+
+  async register(data: import('./auth.types').RegisterRequest): Promise<{ tokens: AuthTokens, user: JwtPayload }> {
+    const existing = await this.repo.findUserByEmail(data.email);
+    if (existing) {
+      throw new AppError(409, 'CONFLICT', 'Email already registered');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(data.password, salt);
+
+    const user = await this.repo.createUser({
+      email: data.email,
+      name: data.name,
+      passwordHash,
+      role: Role.USER, // Force role to USER ignoring client input
+    });
+
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const secret = env.JWT_SECRET;
+    const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
+
+    const refreshToken = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+    await this.repo.createSession(user.id, refreshToken, expiresAt);
+
+    return {
+      tokens: { accessToken, refreshToken },
+      user: payload,
+    };
+  }
 
   async login(email: string, passwordPlain: string): Promise<{ tokens: AuthTokens, user: JwtPayload }> {
     const user = await this.repo.findUserByEmail(email);

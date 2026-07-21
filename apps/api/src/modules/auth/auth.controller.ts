@@ -5,6 +5,21 @@ import { AuthenticatedRequest, ApiResponse } from '../../types';
 export class AuthController {
   constructor(private readonly service: AuthService) {}
 
+  register = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = req.body; // already validated by Zod schema
+      const result = await this.service.register(data);
+      
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        data: result,
+      };
+      res.status(201).json(response);
+    } catch (err) {
+      next(err);
+    }
+  };
+
   login = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { email, password } = req.body;

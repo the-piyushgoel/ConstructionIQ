@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load the .env file from the workspace root (d:\ConstructionIQ\.env)
+// __dirname is either src/config or dist/config, so we go up 4 levels
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),

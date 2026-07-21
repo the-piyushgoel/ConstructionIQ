@@ -1,4 +1,4 @@
-import { User, Session } from '@prisma/client';
+import { User, Session, Role } from '@prisma/client';
 import prisma from '../../db/prisma';
 
 export class AuthRepository {
@@ -8,6 +8,12 @@ export class AuthRepository {
 
   async findUserById(id: string): Promise<User | null> {
     return prisma.user.findUnique({ where: { id } });
+  }
+
+  async createUser(data: { email: string; passwordHash: string; name: string; role: Role }): Promise<User> {
+    return prisma.user.create({
+      data,
+    });
   }
 
   async createSession(userId: string, token: string, expiresAt: Date): Promise<Session> {

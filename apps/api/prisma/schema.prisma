@@ -12,6 +12,7 @@ enum Role {
   PM
   ENGINEER
   VIEWER
+  USER
 }
 
 enum ProjectStatus {
